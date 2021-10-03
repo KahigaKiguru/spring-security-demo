@@ -5,6 +5,7 @@ import io.enzi.springsecuritydemo.domain.Role;
 import io.enzi.springsecuritydemo.domain.User;
 import io.enzi.springsecuritydemo.repository.UserRepository;
 import io.enzi.springsecuritydemo.repository.RoleRepository;
+import io.enzi.springsecuritydemo.requests.AddRoleToUserRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,23 +20,31 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
 
-    User addUser(User newUser){
+    public User addUser(User newUser){
         return userRepository.save(newUser);
     }
 
-    void addUserRole(Long userId, RoleType roleType){
-        User user = userRepository.findById(userId).get();
-        Role role = roleRepository.findByRoleType(roleType).get();
+    public void addUserRole(AddRoleToUserRequest request){
+        User user = userRepository.findByUserName(request.getUsername()).get();
+        Role role = roleRepository.findByRole(request.getRole()).get();
 
         user.getRoles().add(role);
 
     }
 
-    List<User> getAllUsers(){
-        return userRepository.findAll();
+    public Role addRole(Role role){
+        return roleRepository.save(role);
     }
 
-    User getUser(Long userId){
+    public User getUserById(Long userId){
         return userRepository.findById(userId).get();
+    }
+
+    public User getUserByUserName(String userName){
+        return userRepository.findByUserName(userName).get();
+    }
+
+    public List<User> getAllUsers(){
+        return userRepository.findAll();
     }
 }
