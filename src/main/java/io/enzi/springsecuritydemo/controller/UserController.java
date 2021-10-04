@@ -11,7 +11,6 @@ import io.enzi.springsecuritydemo.requests.AddRoleToUserRequest;
 import io.enzi.springsecuritydemo.requests.AddUserRequest;
 import io.enzi.springsecuritydemo.service.UserService;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,9 +21,11 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
@@ -70,23 +71,37 @@ public class UserController {
         userService.addUserRole(request);
         return ResponseEntity.ok().build();
     }
-    @SneakyThrows
-    @GetMapping("/refreshToken")
-    public void
-    refreshToken(HttpServletRequest request, HttpServletResponse response){
+    @GetMapping("/token/refresh")
+    public void refreshToken(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String authorizationHeader = request.getHeader(AUTHORIZATION);
 
             if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")){
                 try {
-                    String token = authorizationHeader.substring("Bearer ".length());
+                    String refresh_token = authorizationHeader.substring("Bearer ".length());
                     Algorithm algorithm = Algorithm.HMAC256("secret".getBytes(StandardCharsets.UTF_8));
                     JWTVerifier verifier = JWT.require(algorithm).build();
-                    DecodedJWT decodedJWT = verifier.verify(token);
-                    String username = decodedJWT.getToken();
+                    DecodedJWT decodedJWT = verifier.verify(refresh_token);
+
+                    String username = decodedJWT.getSubject();
 
                     User user = userService.getUserByUserName(username);
 
+                    String access_token = JWT
+                            .create()
+                            .withSubject(user.getUserName())
+                            .withExpiresAt(new Date(System.currentTimeMillis() + 10 * 60 * 1000))
+                            .withIssuer(request.getRequestURL().toString())
+                            .withClaim("roles", user.getRoles().stream().map(Role::getRole).collect(Collectors.toList()))
+                            .sign(algorithm);
 
+                    Map<String, String> tokens  = new HashMap<>();
+
+                    tokens.put("access_token", access_token);
+                    tokens.put("refresh_token", refresh_token);
+
+                    response.setContentType(APPLICATION_JSON_VALUE);
+
+                    new ObjectMapper().writeValue(response.getOutputStream(), tokens);
                     String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
                     Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
 
@@ -103,8 +118,6 @@ public class UserController {
                     log.error("Error Logging in :: {}", e.getMessage());
                     response.setHeader("error", e.getMessage());
                     response.setStatus(FORBIDDEN.value());
-//                    response.sendError(FORBIDDEN.value());
-
                     Map<String, String> error  = new HashMap<>();
 
                     error.put("error_message", e.getMessage());
@@ -118,4 +131,4 @@ public class UserController {
                 throw new RuntimeException("Refresh Token is missing");
         }
     }
-}
+

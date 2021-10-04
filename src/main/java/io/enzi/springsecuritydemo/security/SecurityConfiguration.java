@@ -37,22 +37,45 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
         filter.setFilterProcessesUrl("/api/login");
 
-        http.csrf().disable();
-        http.sessionManagement().sessionCreationPolicy(STATELESS);
-        http.authorizeRequests().antMatchers("/api/login/**").permitAll();
-        http.authorizeRequests()
+        http
+                .csrf()
+                .disable();
+
+        http
+                .sessionManagement()
+                .sessionCreationPolicy(STATELESS);
+
+        http
+                .authorizeRequests()
+                .antMatchers("/api/login/**", "/api/token/refresh/**")
+                .permitAll();
+
+        http
+                .authorizeRequests()
                 .antMatchers(GET, "/api/**")
                 .hasAnyAuthority("ROLE_ADMIN");
-        http.authorizeRequests()
+
+        http
+                .authorizeRequests()
                 .antMatchers(POST, "/api/user/**")
                 .hasAnyAuthority("ROLE_ADMIN");
-        http.authorizeRequests()
+
+        http
+                .authorizeRequests()
                 .antMatchers(POST, "/api/role/**")
                 .hasAnyAuthority("ROLE_ADMIN", "ROLE_SUPER_ADMIN");
 
-        http.authorizeRequests().anyRequest().authenticated();
-        http.addFilter(filter);
-        http.addFilterBefore(new CustomAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
+        http
+                .authorizeRequests()
+                .anyRequest()
+                .authenticated();
+
+
+        http
+                .addFilter(filter);
+
+        http
+                .addFilterBefore(new CustomAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
 
     }
 
