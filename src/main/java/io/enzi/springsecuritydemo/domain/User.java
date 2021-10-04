@@ -26,10 +26,13 @@ public class User {
     @JsonProperty("username")
     private String userName;
 
+    @JsonProperty("password")
+    private String password;
+
     @JsonProperty("emailAddress")
     private String emailAddress;
 
     @JsonProperty("roles")
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER, targetEntity = Role.class)
     private Collection<Role> roles = new ArrayList<>();
 }

@@ -3,6 +3,7 @@ package io.enzi.springsecuritydemo.controller;
 import io.enzi.springsecuritydemo.domain.Role;
 import io.enzi.springsecuritydemo.domain.User;
 import io.enzi.springsecuritydemo.requests.AddRoleToUserRequest;
+import io.enzi.springsecuritydemo.requests.AddUserRequest;
 import io.enzi.springsecuritydemo.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -29,20 +30,25 @@ public class UserController {
         return ResponseEntity.ok().body(userService.getAllUsers());
     }
 
+    @GetMapping("/getAllRoles")
+    public ResponseEntity<List<Role>> getAllRoles(){
+        return ResponseEntity.ok().body(userService.getAllRoles());
+    }
+
     @PostMapping("/user/add")
-    public ResponseEntity<User> addUser(@RequestBody User newUser) {
+    public ResponseEntity<User> addUser(@RequestBody AddUserRequest request) {
         URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/add").toUriString());
-        return ResponseEntity.created(uri).body(userService.addUser(newUser));
+        return ResponseEntity.created(uri).body(userService.addUser(request));
     }
     @PostMapping("/role/add")
-    public ResponseEntity<Role> addRole(@RequestBody Role newRole) {
+    public ResponseEntity<Role> addRole(@RequestBody String newRole) {
         URI uri = URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/user/add").toUriString());
         return ResponseEntity.created(uri).body(userService.addRole(newRole));
     }
 
     @PostMapping("/user/addRole")
-    public void addUserRole(@RequestBody AddRoleToUserRequest request){
-
+    public ResponseEntity addUserRole(@RequestBody AddRoleToUserRequest request){
         userService.addUserRole(request);
+        return ResponseEntity.ok().build();
     }
 }
